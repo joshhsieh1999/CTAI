@@ -1,0 +1,47 @@
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS runner
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat \
+    fontconfig ttf-freefont \
+    python3 py3-pip make g++ \
+    build-base cairo-dev pango-dev jpeg-dev giflib-dev giflib-dev 
+
+WORKDIR /usr/src/app
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV PYTHON=/usr/bin/python3
+
+# Install dependencies based on the preferred package manager
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm install && echo "npm install Finish"; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
+
+RUN npx prisma generate
+
+# Uncomment if you want to build to see if error exist
+# RUN \
+#   if [ -f yarn.lock ]; then yarn run build; \
+#   elif [ -f package-lock.json ]; then npm run build; \
+#   elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+#   else echo "Lockfile not found." && exit 1; \
+#   fi
+
+# permission
+RUN adduser --system --uid 1001 nextjs
+
+RUN chown nextjs:1000 ./
+RUN chown nextjs:1000 ./node_modules
+RUN chown -R nextjs:1000 ./node_modules/.prisma
+RUN chown nextjs:1000 ./entrypoint.dev.sh
+
+USER nextjs:1000
+
+RUN chmod +x ./entrypoint.dev.sh
+
+CMD ["./entrypoint.dev.sh"]

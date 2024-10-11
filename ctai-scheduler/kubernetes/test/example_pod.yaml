@@ -1,0 +1,47 @@
+# Example Pod Template
+# This pod demonstrates basic operations and resource allocation in Kubernetes
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  # Volume definitions
+  volumes:
+    - name: training-task
+      persistentVolumeClaim:
+        claimName: training-task-pvc
+
+  containers:
+    - name: example-container
+      image: busybox
+      # Never pull the image (assumes it's already present on the node)
+      imagePullPolicy: Never
+      # Command to execute in the container
+      command:
+        - "sh"
+        - "-c"
+        - |
+          echo Hello, World! > /mnt/training-task/hello.txt
+          echo 'Completed writing to hello.txt'
+          sleep 60
+      # Run as non-root user for security
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      # Resource allocation for the container
+      resources:
+        requests:
+          memory: 5Gi
+          cpu: 500m
+          nvidia.com/gpu: 1
+        limits:
+          memory: 10Gi
+          cpu: "1"
+          nvidia.com/gpu: 1
+      # Volume mounts for persistent storage
+      volumeMounts:
+        - name: training-task
+          mountPath: /mnt/training-task
+        - name: training-task
+          mountPath: /workspace/dataset
+          subPath: project-10/version-9/dataset

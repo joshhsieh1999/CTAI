@@ -1,0 +1,110 @@
+# Kubernetes Job Template for ML Training and Result Analysis
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{PROJECT_NAME}}-{{VERSION_NAME}}"
+spec:
+  # Delete the job 20 seconds after it finishes
+  ttlSecondsAfterFinished: 20
+  # Do not retry if the job fails
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: "{{PROJECT_NAME}}-{{VERSION_NAME}}"
+    spec:
+      # Do not restart containers after they exit
+      restartPolicy: Never
+      # # Specify the node where this job should run
+      # nodeName: "hsnl"
+      # Credentials for pulling images from a private registry
+      imagePullSecrets:
+        - name: gitlab-registry-secret
+
+      containers:
+        # Main container for ML training
+        - name: training-container
+          image: hub.hsnl.tw/ctai/{{IMAGE_NAME}}:23.12
+          imagePullPolicy: Always
+          command:
+            ["/bin/bash", "-c", "/workspace/scripts/train_and_analyze.sh"]
+          # Run as non-root user for security
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          # Resource allocation for the training container
+          resources:
+            limits:
+              cpu: "18"
+              memory: 80Gi
+              nvidia.com/gpu: 1
+            requests:
+              cpu: "1.5"
+              memory: 18Gi
+              nvidia.com/gpu: 1
+          # Volume mounts for persistent storage and shared memory
+          volumeMounts:
+            - name: training-task
+              mountPath: /workspace/dataset
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/dataset"
+            - name: training-task
+              mountPath: /workspace/results
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/results"
+            - name: training-task
+              mountPath: /workspace/wandb
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/results/wandb"
+            - name: training-task
+              mountPath: /workspace/scripts
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/scripts"
+            - name: dshm
+              mountPath: /dev/shm
+
+        # Container for analyzing training results
+        - name: result-analyzer
+          image: hub.hsnl.tw/ctai/analyzer:latest
+          imagePullPolicy: Always
+          command:
+            ["/bin/bash", "-c", "/workspace/scripts/start_and_monitor.sh"]
+          # Resource allocation for the result analyzer
+          resources:
+            limits:
+              cpu: "1"
+              memory: 5Gi
+            requests:
+              cpu: "0.3"
+              memory: 1Gi
+          # Volume mounts for accessing training data and results
+          volumeMounts:
+            - name: training-task
+              mountPath: /workspace/dataset
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/dataset"
+            - name: training-task
+              mountPath: "/workspace/results"
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/results"
+            - name: training-task
+              mountPath: /workspace/scripts
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/scripts"
+
+      # Volume definitions
+      volumes:
+        # Persistent volume for storing training data and results
+        - name: training-task
+          persistentVolumeClaim:
+            claimName: training-task-pvc
+        # In-memory volume for temporary storage (e.g., for /dev/shm)
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Gi
+
+      # Node affinity configuration (currently commented out)
+      # Uncomment and adjust if you need to schedule on nodes with specific GPU memory
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #             - key: nvidia.com/gpu.memory
+      #               operator: Gt
+      #               values:
+      #                 - "12288"

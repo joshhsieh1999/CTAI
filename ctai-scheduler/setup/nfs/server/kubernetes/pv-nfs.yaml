@@ -1,0 +1,21 @@
+# Persistent Volume (PV) for NFS
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: training-task-pv
+  labels:
+    type: nfs
+    purpose: training-task
+spec:
+  capacity:
+    storage: 200Gi # Storage size of the PV, 200GB in this case
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany # Access mode of the PV, allow multiple nodes to read and write
+  persistentVolumeReclaimPolicy: Retain # Safekeeping the data after the PV is deleted
+  storageClassName: nfs # Use the NFS storage class
+  nfs:
+    server: "192.168.2.94" # IP address of the NFS server
+    path: "/home/hsnl/CTAI-workspace/mnt/training-task" # Path of the NFS server
+
+# kubectl apply -f pv-nfs.yaml

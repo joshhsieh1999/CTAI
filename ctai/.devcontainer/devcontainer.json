@@ -1,0 +1,15 @@
+{
+    "name": "NextJS Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "node",
+    "runArgs": ["--network", "dev-network"],
+    // "dockerComposeFile": "compose.yml",
+    // "service": "app",
+    // "workspaceFolder": "/workspace"
+    "mounts": [
+        // mount the train_process folder for debugging
+        // "source=/home/debian/ctai/mnt/train_process,target=/workspaces/ctai/train_process,type=bind,consistency=cached",
+    ]
+}

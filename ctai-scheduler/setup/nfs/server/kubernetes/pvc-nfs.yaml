@@ -1,0 +1,22 @@
+# Persistent Volume Claim (PVC) for NFS
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: training-task-pvc
+  labels:
+    app: training-task
+    type: nfs-storage
+spec:
+  accessModes:
+    - ReadWriteMany # Access mode of the PV, allow multiple nodes to read and write
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 200Gi # Storage size of the PV, 200Gi in this case
+  storageClassName: nfs # Use the NFS storage class
+  selector:
+    matchLabels:
+      type: nfs
+      purpose: training-task # For the PV with the same label
+
+# kubectl apply -f pvc-nfs.yaml

@@ -1,0 +1,56 @@
+services:
+#   app:
+#     container_name: nextjs-app
+#     hostname: nextjs-app
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     ports:
+#       - "3000:3000"
+#     volumes:
+#       - .:/app
+#     environment:
+#       - DATABASE_URL=${DATABASE_URL}
+#     depends_on:
+#       - mariadb
+#     platforms:
+#       - linux/amd64
+
+  mariadb:
+    image: mariadb:10.11.7
+    container_name: mariadb
+    hostname: ${DB_HOST}
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../ctai_database/data:/var/lib/mysql
+    # healthcheck:
+    #   test: "mysql -hlocalhost -u$DB_USERNAME -p$DB_PASSWORD ${DB_DATABASE} -e 'select 1'"
+    #   interval: 1s
+    #   timeout: 3s
+    #   retries: 10
+    platform: linux/amd64
+  
+  pma:
+    image: phpmyadmin/phpmyadmin:5.2.1
+    container_name: pma
+    hostname: pma
+    environment:
+      PMA_HOST: ${DB_HOST}
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      - mariadb
+    platform: linux/amd64
+
+networks:
+  default:
+    name: dev-network
+    external: true

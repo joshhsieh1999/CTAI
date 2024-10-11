@@ -1,0 +1,1007 @@
+{
+	"info": {
+		"_postman_id": "2736d297-a756-4f60-9c7e-d914f70c3b9f",
+		"name": "CTAI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "(auth)",
+					"item": [
+						{
+							"name": "register",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Generate a random number to ensure the email is unique\r",
+											"const randomNumber = Math.floor(Math.random() * 1000000);\r",
+											"\r",
+											"// Generate a random email using the random number\r",
+											"const email = `email_${randomNumber}@example.com`;\r",
+											"const name = `user_${randomNumber}`\r",
+											"\r",
+											"// Set the email and password as environment variables\r",
+											"pm.collectionVariables.set(\"test_email\", email);\r",
+											"pm.collectionVariables.set(\"test_name\", name);\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('response match', function () {\r",
+											"    const responseData = pm.response.json();\r",
+											"    pm.expect(responseData).to.be.an('object');\r",
+											"    pm.expect(responseData.id).to.be.an('number');\r",
+											"    pm.collectionVariables.set(\"test_userId\", responseData.id);\r",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"{{test_name}}\",\r\n    \"email\": \"{{test_email}}\",\r\n    \"password\": \"{{test_password}}\",\r\n    \"organizationId\": 1,\r\n    \"roleId\": 1\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/register",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "login",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"baseUrl\");",
+											"pm.sendRequest(`${baseUrl}/api/auth/csrf`, function (err, response) {",
+											"    var jsonData = response.json();",
+											"    pm.collectionVariables.set(\"csrfToken\", jsonData.csrfToken);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test for response against saved value\", function ()\r",
+											"{\r",
+											"    pm.expect(pm.response.json().url).to.eql('http://localhost:3000/');\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "redirect",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "email",
+											"value": "{{test_email}}",
+											"type": "text"
+										},
+										{
+											"key": "password",
+											"value": "{{test_password}}",
+											"type": "text"
+										},
+										{
+											"key": "totpCode",
+											"value": "",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "callbackUrl",
+											"value": "{{baseUrl}}/",
+											"type": "text"
+										},
+										{
+											"key": "csrfToken",
+											"value": "{{csrfToken}}",
+											"type": "text"
+										},
+										{
+											"key": "json",
+											"value": "true",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/callback/credentials?",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"callback",
+										"credentials"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": null
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "projects",
+					"item": [
+						{
+							"name": "[projectId]",
+							"item": [
+								{
+									"name": "version",
+									"item": [
+										{
+											"name": "[versionId]",
+											"item": [
+												{
+													"name": "[datasetId]",
+													"item": [
+														{
+															"name": "thumbnail",
+															"request": {
+																"method": "GET",
+																"header": [],
+																"url": {
+																	"raw": "{{baseUrl}}/api/projects/:projectId/versions/:versionId/cvatDatasets/:datasetId/thumbnail",
+																	"host": [
+																		"{{baseUrl}}"
+																	],
+																	"path": [
+																		"api",
+																		"projects",
+																		":projectId",
+																		"versions",
+																		":versionId",
+																		"cvatDatasets",
+																		":datasetId",
+																		"thumbnail"
+																	],
+																	"variable": [
+																		{
+																			"key": "projectId",
+																			"value": "{{test_projectId}}"
+																		},
+																		{
+																			"key": "versionId",
+																			"value": "{{test_projectId}}"
+																		},
+																		{
+																			"key": "datasetId",
+																			"value": ""
+																		}
+																	]
+																}
+															},
+															"response": []
+														}
+													]
+												},
+												{
+													"name": "cvatDatasets",
+													"request": {
+														"method": "POST",
+														"header": [],
+														"body": {
+															"mode": "raw",
+															"raw": "{\r\n    \"organizationSlug\": \"s17y0m5gen22j7s8\"\r\n}",
+															"options": {
+																"raw": {
+																	"language": "json"
+																}
+															}
+														},
+														"url": {
+															"raw": "{{baseUrl}}/api/projects/:projectId/versions/:versionId/cvatDatasets",
+															"host": [
+																"{{baseUrl}}"
+															],
+															"path": [
+																"api",
+																"projects",
+																":projectId",
+																"versions",
+																":versionId",
+																"cvatDatasets"
+															],
+															"variable": [
+																{
+																	"key": "projectId",
+																	"value": "{{test_projectId}}"
+																},
+																{
+																	"key": "versionId",
+																	"value": "{{test_versionId}}"
+																}
+															]
+														}
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "[versionId]",
+											"request": {
+												"method": "GET",
+												"header": []
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "members",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"const expectedSchema = {\r",
+													"  \"type\": \"object\",\r",
+													"  \"properties\": {\r",
+													"    \"projectId\": {\r",
+													"      \"type\": \"integer\",\r",
+													"    },\r",
+													"    \"memberId\": {\r",
+													"      \"type\": \"integer\",\r",
+													"    }\r",
+													"  },\r",
+													"  \"required\": [\r",
+													"    \"projectId\",\r",
+													"    \"memberId\",\r",
+													"    ]\r",
+													"};\r",
+													"\r",
+													"pm.test('response matches JSON schema', () => {\r",
+													"    pm.response.to.have.jsonSchema(expectedSchema);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"memberId\":{{test_memberId}}}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/projects/:projectId/members/",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"projects",
+												":projectId",
+												"members",
+												""
+											],
+											"variable": [
+												{
+													"key": "projectId",
+													"value": "{{test_projectId}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "members",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// Describe the expected response shape with JSON Schema\r",
+													"// https://json-schema.org/\r",
+													"const expectedSchema = {\r",
+													"  \"type\": \"array\",\r",
+													"  \"items\": {\r",
+													"    \"type\": \"object\",\r",
+													"    \"properties\": {\r",
+													"      \"projectId\": {\r",
+													"        \"type\": \"integer\",\r",
+													"      },\r",
+													"      \"memberId\": {\r",
+													"        \"type\": \"integer\",\r",
+													"      }\r",
+													"    },\r",
+													"    \"required\": [\r",
+													"      \"projectId\",\r",
+													"      \"memberId\",\r",
+													"    ]\r",
+													"  }\r",
+													"};\r",
+													"\r",
+													"// Test that the response matches the expected schema using built-in schema verification\r",
+													"pm.test('response matches JSON schema', () => {\r",
+													"  pm.response.to.have.jsonSchema(expectedSchema);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disableBodyPruning": true
+									},
+									"request": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/projects/:projectId/members/",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"projects",
+												":projectId",
+												"members",
+												""
+											],
+											"variable": [
+												{
+													"key": "projectId",
+													"value": "{{test_projectId}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "members",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"const expectedSchema = {\r",
+													"  \"type\": \"object\",\r",
+													"  \"properties\": {\r",
+													"    \"projectId\": {\r",
+													"      \"type\": \"integer\",\r",
+													"    },\r",
+													"    \"memberId\": {\r",
+													"      \"type\": \"integer\",\r",
+													"    }\r",
+													"  },\r",
+													"  \"required\": [\r",
+													"    \"projectId\",\r",
+													"    \"memberId\",\r",
+													"    ]\r",
+													"};\r",
+													"\r",
+													"pm.test('response matches JSON schema', () => {\r",
+													"    pm.response.to.have.jsonSchema(expectedSchema);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"memberId\":{{test_memberId}}}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/projects/:projectId/members/",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"projects",
+												":projectId",
+												"members",
+												""
+											],
+											"variable": [
+												{
+													"key": "projectId",
+													"value": "{{test_projectId}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "versions",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/projects/:projectId/versions",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"projects",
+												":projectId",
+												"versions"
+											],
+											"variable": [
+												{
+													"key": "projectId",
+													"value": "{{test_projectId}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "versions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/projects/versions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"projects",
+										"versions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[projectId]",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/projects/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"projects",
+										":id"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": null,
+											"disabled": true
+										}
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{test_projectId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[projectId]",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/projects/:projectId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"projects",
+										":projectId"
+									],
+									"variable": [
+										{
+											"key": "projectId",
+											"value": "{{test_projectId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "users",
+					"item": [
+						{
+							"name": "[userId]",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\":\"test30\"}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/users/:userId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "{{test_userId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[userId]",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\":\"test30\"}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/users/:userId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "{{test_userId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[userId]",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/users/:userId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "{{test_userId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "organizations",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"test_{{$randomNoun}}\",\r\n    \"uniformNumber\": {{$randomInt}}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "projects",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('response match', function () {\r",
+									"    const responseData = pm.response.json();\r",
+									"    pm.expect(responseData).to.be.an('object');\r",
+									"    pm.expect(responseData.id).to.be.an('number');\r",
+									"    pm.collectionVariables.set(\"test_projectId\", responseData.id);\r",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"project_{{$randomLastName}}\",\r\n    \"taskType\": \"Object Detection\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/projects",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "projects",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"testproject\",\r\n    \"taskType\": \"Object Detection\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/projects/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"projects",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "organizations",
+			"item": [
+				{
+					"name": "[organizationId]",
+					"item": [
+						{
+							"name": "users",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/organizations/:organizationId/users",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"organizations",
+										":organizationId",
+										"users"
+									],
+									"variable": [
+										{
+											"key": "organizationId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "csrfToken",
+			"value": ""
+		},
+		{
+			"key": "email",
+			"value": "email_seed_0imp7uvm@test.tw",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "1qaz@WSX3edc",
+			"type": "string"
+		},
+		{
+			"key": "test_email",
+			"value": "email_seed_0imp7uvm@test.tw",
+			"type": "string"
+		},
+		{
+			"key": "test_password",
+			"value": "1qaz@WSX3edc",
+			"type": "string"
+		},
+		{
+			"key": "test_projectId",
+			"value": "3",
+			"type": "string"
+		},
+		{
+			"key": "test_projectName",
+			"value": "test_project_postman",
+			"type": "string"
+		},
+		{
+			"key": "test_memberId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "test_userId",
+			"value": ""
+		},
+		{
+			"key": "test_name",
+			"value": "user_test_postman",
+			"type": "string"
+		},
+		{
+			"key": "test_versionId",
+			"value": "3",
+			"type": "default"
+		},
+		{
+			"key": "test_datasetId",
+			"value": "7",
+			"type": "default"
+		}
+	]
+}

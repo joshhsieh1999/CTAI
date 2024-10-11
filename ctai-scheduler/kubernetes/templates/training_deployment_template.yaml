@@ -1,0 +1,92 @@
+# Kubernetes Deployment Template for ML Training and Result Analysis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{PROJECT_NAME}}-{{VERSION_NAME}}"
+spec:
+  # Number of replicas to run
+  replicas: 1
+  # Selector for identifying the pods managed by this deployment
+  selector:
+    matchLabels:
+      app: "{{PROJECT_NAME}}-{{VERSION_NAME}}"
+  template:
+    metadata:
+      labels:
+        app: "{{PROJECT_NAME}}-{{VERSION_NAME}}"
+    spec:
+      # Always restart the containers if they exit
+      restartPolicy: Always
+
+      # Volume definitions
+      volumes:
+        # Persistent volume for storing training data and results
+        - name: training-task
+          persistentVolumeClaim:
+            claimName: training-task-pvc
+
+      containers:
+        # Main container for ML training
+        - name: training-container
+          image: "{{IMAGE_NAME}}:latest"
+          # Never pull the image (assumes it's already present on the node)
+          imagePullPolicy: Never
+          command:
+            ["/bin/bash", "-c", "/workspace/scripts/train_and_analyze.sh"]
+          # Run as non-root user for security
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          # Resource allocation for the training container
+          resources:
+            limits:
+              cpu: "18"
+              memory: 80Gi
+              nvidia.com/gpu: 1
+            requests:
+              cpu: "1.5"
+              memory: 18Gi
+              nvidia.com/gpu: 1
+          # Volume mounts for persistent storage
+          volumeMounts:
+            - name: training-task
+              mountPath: /workspace/dataset
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/dataset"
+            - name: training-task
+              mountPath: /workspace/results
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/results"
+            - name: training-task
+              mountPath: /workspace/scripts
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/scripts"
+            - name: training-task
+              mountPath: /workspace/result_analyzer
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/result_analyzer"
+
+        # Container for analyzing training results
+        - name: result-analyzer
+          image: result_analyzer:latest
+          # Never pull the image (assumes it's already present on the node)
+          imagePullPolicy: Never
+          # Set up and run cron job for periodic analysis
+          command:
+            [
+              "/bin/bash",
+              "-c",
+              "crontab /workspace/result_analyzer/analysis_crontab && cron -f",
+            ]
+          # Resource allocation for the result analyzer
+          resources:
+            limits:
+              cpu: "1"
+              memory: 5Gi
+            requests:
+              cpu: "0.5"
+              memory: 1Gi
+          # Volume mounts for accessing training results and analysis scripts
+          volumeMounts:
+            - name: training-task
+              mountPath: "/workspace/results"
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/results"
+            - name: training-task
+              mountPath: "/workspace/result_analyzer"
+              subPath: "{{PROJECT_NAME}}/{{VERSION_NAME}}/result_analyzer"

@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int          @id @unique @default(autoincrement())
+  name           String
+  email          String       @unique
+  password       String
+  tel            String?
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  roleId         Int          @map("role_id")
+  role           Role         @relation(fields: [roleId], references: [id])
+  locale         String       @default("en-US")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+  attempts       Int          @default(0)
+  lastLogin      DateTime?    @map("last_login")
+  lastAttempt    DateTime?    @map("last_attempt")
+  CVATAuthToken  String       @map("CVAT_auth_token")
+  CVATUserId     Int          @map("CVAT_user_id")
+
+  projects       Project[]
+  projectMembers ProjectMember[]
+  version        Version[]
+
+  @@map("User")
+}
+
+model Organization {
+  id            Int       @id @unique @default(autoincrement())
+  name          String
+  uniformNumber Int       @unique
+  description   String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  users         User[]
+  projects      Project[]
+
+  @@map("Organization")
+}
+
+model Role {
+  id        Int      @id @unique @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  users     User[]
+
+  @@map("Role")
+}
+
+model Project {
+  id                   Int             @id @unique @default(autoincrement())
+  name                 String
+  creatorId            Int             @map("creater_id")
+  creator              User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  organizationId       Int             @map("organization_id")
+  organization         Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taskType             String          @map("task_type")
+  CVATOrganizationId   Int             @map("CVAT_organization_id")
+  CVATOrganizationSlug String          @map("CVAT_organization_slug")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at")
+  versions             Version[]
+  projectMembers       ProjectMember[]
+
+  @@map("Project")
+}
+
+model Version {
+  id         Int       @id @unique @default(autoincrement())
+  projectId  Int       @map("project_id")
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versionNum Int       @default(1) @map("version_num")
+  creatorId  Int       @map("creator_id")
+  creator    User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  sessionId  Int?      @unique @map("session_id")
+  training   Training? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  datasetId  Int?      @unique @map("dataset_id")
+  dataset    Dataset?  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  status     String    @default("Editing:dataset")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("Version")
+}
+
+model Training {
+  id          Int       @id @unique @default(autoincrement())
+  modelId     Int       @map("model_id")
+  model       Model     @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  modelParams Json      @map("model_params")
+  result      String?
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  version     Version?
+
+  @@map("Training")
+}
+
+model Dataset {
+  id               Int      @id @unique @default(autoincrement())
+  labelType        String   @map("label_type")
+  dataPreprocess   Json     @map("data_preprocess")
+  dataAugmentation Json     @map("data_augmentation")
+  datasetSplit     Json     @map("dataset_split")
+  filePath         String   @map("file_path")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  versions         Version?
+
+  @@map("Dataset")
+}
+
+model Model {
+  id        Int        @id @unique @default(autoincrement())
+  modelName String     @map("model_name")
+  modelType String     @map("model_type")
+  framework String     @map("framework")
+  createdAt DateTime   @default(now()) @map("created_at")
+  trainings Training[]
+
+  @@map("Model")
+}
+
+model ProjectMember {
+  projectId        Int      @map("project_id")
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  memberId         Int      @map("member_id")
+  member           User     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  CVATMembershipId Int      @map("CVAT_membership_id")
+
+  @@unique([projectId, memberId])
+  @@map("ProjectMember")
+}
